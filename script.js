@@ -25,7 +25,7 @@ cityInput.addEventListener("input", async () => {
   if (query.length < 2) return;
 
   try {
-    const res = await fetch(https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=ed95aef3b8434dcd80f1a19a9fad96d8&limit=5&language=en);
+    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=ed95aef3b8434dcd80f1a19a9fad96d8&limit=5&language=en`);
     const data = await res.json();
 
     data.results.forEach(item => {
@@ -75,14 +75,14 @@ myLocationBtn.addEventListener("click", () => {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
       try {
-        const geoRes = await fetch(https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json);
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
         const geoData = await geoRes.json();
         const address = geoData.address || {};
 
         const place = address.city || address.town || address.village || address.hamlet || address.suburb || "Unknown Place";
         const upazila = address.suburb || address.county || "Unknown Upazila";
         const zilla = address.state_district || address.state || address.region || "Unknown Zilla";
-        const fullName = ${place.toUpperCase()} (${upazila}, ${zilla});
+        const fullName = `${place.toUpperCase()} (${upazila}, ${zilla})`;
 
         fetchWeatherByCoords(lat, lon, fullName);
       } catch (err) {
@@ -90,10 +90,10 @@ myLocationBtn.addEventListener("click", () => {
         fetchWeatherByCoords(lat, lon, "YOUR LOCATION");
       }
     }, () => {
-      weatherResult.innerHTML = <p style="color:red;">❌ Failed to get your location.</p>;
+      weatherResult.innerHTML = `<p style="color:red;">❌ Failed to get your location.</p>`;
     });
   } else {
-    weatherResult.innerHTML = <p style="color:red;">❌ Geolocation not supported in this browser.</p>;
+    weatherResult.innerHTML = `<p style="color:red;">❌ Geolocation not supported in this browser.</p>`;
   }
 });
 
@@ -133,11 +133,11 @@ function displayHistory() {
 
 async function fetchWeatherByCity(city) {
   try {
-    const geoRes = await fetch(https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&format=json);
+    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&format=json`);
     const geoData = await geoRes.json();
 
     if (!geoData.length) {
-      weatherResult.innerHTML = <p style="color:red;">❌ City not found.</p>;
+      weatherResult.innerHTML = `<p style="color:red;">❌ City not found.</p>`;
       return;
     }
 
@@ -145,7 +145,7 @@ async function fetchWeatherByCity(city) {
     const lon = geoData[0].lon;
     fetchWeatherByCoords(lat, lon, city);
   } catch (err) {
-    weatherResult.innerHTML = <p style="color:red;">❌ Error fetching city location.</p>;
+    weatherResult.innerHTML = `<p style="color:red;">❌ Error fetching city location.</p>`;
   }
 }
 
@@ -158,28 +158,22 @@ async function fetchWeatherByCoords(lat, lon, city) {
     let startDate, endDate;
 
     if (mode === "live") {
-      const weatherRes = await fetch(
-        https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon} +
-        &current_weather=true&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min +
-        &timezone=auto
-      );
+      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min&timezone=auto`);
       const weatherData = await weatherRes.json();
       const current = weatherData.current_weather;
       const daily = weatherData.daily;
 
       if (!current) {
-        weatherResult.innerHTML = <p style="color:red;">❌ Current weather data unavailable.</p>;
+        weatherResult.innerHTML = `<p style="color:red;">❌ Current weather data unavailable.</p>`;
         return;
       }
 
       let humidity = "-";
       if (daily.relative_humidity_2m_max && daily.relative_humidity_2m_min) {
-        humidity = (
-          (daily.relative_humidity_2m_max[0] + daily.relative_humidity_2m_min[0]) / 2
-        ).toFixed(1);
+        humidity = ((daily.relative_humidity_2m_max[0] + daily.relative_humidity_2m_min[0]) / 2).toFixed(1);
       }
 
-      weatherResult.innerHTML = 
+      weatherResult.innerHTML = `
         <h3>📍 ${city}</h3>
         <p>🌡 Current Temperature: ${current.temperature} °C</p>
         <p>🌡 Max Temp (Today): ${daily.temperature_2m_max[0]} °C</p>
@@ -188,8 +182,7 @@ async function fetchWeatherByCoords(lat, lon, city) {
         <p>🌡 Feels Like Min: ${daily.apparent_temperature_min[0]} °C</p>
         <p>💨 Wind Speed: ${current.windspeed} km/h</p>
         <p>💧 Humidity: ${humidity} %</p>
-        <p>🌍 Latitude: ${lat}, Longitude: ${lon}</p>
-      ;
+        <p>🌍 Latitude: ${lat}, Longitude: ${lon}</p>`;
       return;
     }
 
@@ -197,14 +190,14 @@ async function fetchWeatherByCoords(lat, lon, city) {
       const pastStart = new Date(today);
       pastStart.setDate(today.getDate() - 7);
       startDate = pastStart.toISOString().split("T")[0];
-      endDate = new Date(today.setDate(today.getDate() - 1)).toISOString().split("T")[0]; // Exclude today
+      endDate = new Date(today.setDate(today.getDate() - 1)).toISOString().split("T")[0];
     } else {
       const tomorrow = new Date(today);
       tomorrow.setDate(today.getDate() + 1);
       startDate = tomorrow.toISOString().split("T")[0];
 
       const futureEnd = new Date(tomorrow);
-      futureEnd.setDate(futureEnd.getDate() + 6); // 7 days excluding today
+      futureEnd.setDate(futureEnd.getDate() + 6);
       endDate = futureEnd.toISOString().split("T")[0];
     }
 
@@ -212,16 +205,11 @@ async function fetchWeatherByCoords(lat, lon, city) {
       ? "https://archive-api.open-meteo.com/v1/archive"
       : "https://api.open-meteo.com/v1/forecast";
 
-    const res = await fetch(
-      ${apiUrl}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate} +
-      &daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min +
-      &hourly=windspeed_10m&timezone=auto
-    );
-
+    const res = await fetch(`${apiUrl}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min&hourly=windspeed_10m&timezone=auto`);
     const data = await res.json();
 
     if (!data.daily || !data.hourly) {
-      weatherResult.innerHTML = <p style="color:red;">❌ Weather data unavailable.</p>;
+      weatherResult.innerHTML = `<p style="color:red;">❌ Weather data unavailable.</p>`;
       return;
     }
 
@@ -238,14 +226,14 @@ async function fetchWeatherByCoords(lat, lon, city) {
       return speeds.length ? Math.min(...speeds).toFixed(1) : "-";
     };
 
-    let html = <h3>📍 ${city} (${mode === "past" ? "Past" : "Next"} 7 Days)</h3><table><tr>
+    let html = `<h3>📍 ${city} (${mode === "past" ? "Past" : "Next"} 7 Days)</h3><table><tr>
         <th>Date</th><th>Max Temp</th><th>Min Temp</th><th>Feels Max</th><th>Feels Min</th>
         <th>Precip (mm)</th><th>Max Wind</th><th>Min Wind</th><th>Humidity Max</th><th>Humidity Min</th>
-      </tr>;
+      </tr>`;
 
     for (let i = 0; i < data.daily.time.length; i++) {
       const d = data.daily;
-      html += <tr>
+      html += `<tr>
         <td>${d.time[i]}</td>
         <td>${d.temperature_2m_max[i]}</td>
         <td>${d.temperature_2m_min[i]}</td>
@@ -256,16 +244,16 @@ async function fetchWeatherByCoords(lat, lon, city) {
         <td>${getMinWind(d.time[i])}</td>
         <td>${d.relative_humidity_2m_max[i]}</td>
         <td>${d.relative_humidity_2m_min[i]}</td>
-      </tr>;
+      </tr>`;
     }
 
     html += "</table>";
     weatherResult.innerHTML = html;
   } catch (err) {
     console.error(err);
-    weatherResult.innerHTML = <p style="color:red;">❌ Unable to fetch weather. Try again later.</p>;
+    weatherResult.innerHTML = `<p style="color:red;">❌ Unable to fetch weather. Try again later.</p>`;
   }
 }
 
 window.onload = displayHistory;
-For this code where is my search suggestion 
+A
