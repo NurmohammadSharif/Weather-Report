@@ -10,7 +10,7 @@
   <div class="container">
     <h1>🌦 Weather App</h1>
     <form id="weatherForm">
-      <input type="text" id="cityInput" placeholder="Enter City or Upazila" required />
+      <input type="text" id="cityInput" placeholder="Enter City or Upazila" required list="suggestions" />
       <select id="modeSelect">
         <option value="live">Live</option>
         <option value="past">Past 7 Days</option>
@@ -19,6 +19,7 @@
       <button type="submit">Search</button>
     </form>
     <button id="myLocationBtn">📍 My Location</button>
+    <datalist id="suggestions"></datalist>
     <div id="weatherResult"></div>
     <h3>Search History</h3>
     <ul id="historyList"></ul>
