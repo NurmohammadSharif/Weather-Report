@@ -1,131 +1,82 @@
-* {
-  box-sizing: border-box;
-}
-
 body {
   font-family: Arial, sans-serif;
-  background: #f0f4f8;
   margin: 0;
-  padding: 20px;
+  padding: 0;
+  background: #f3f4f6;
+  color: #111;
 }
 
 .container {
-  max-width: 90%;
-  margin: 0 auto;
-  background: white;
+  max-width: 800px;
+  margin: auto;
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-h1, h2 {
+h1 {
   text-align: center;
-  color: #333;
+  color: #1f2937;
 }
 
-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
-  justify-content: center;
+form,
+#historyList,
+#weatherResult {
+  margin-top: 20px;
+  width: 100%;
 }
 
-input[type="text"], select {
-  flex: 1 1 200px;
+input,
+select,
+button {
   padding: 10px;
+  margin: 5px 5px 5px 0;
   font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  width: 100%;
+  max-width: 250px;
 }
 
 button {
-  padding: 10px 20px;
-  font-size: 16px;
-  background: #007bff;
-  border: none;
-  border-radius: 4px;
-  color: white;
   cursor: pointer;
-  flex-shrink: 0;
-  transition: background-color 0.3s ease;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 5px;
 }
 
 button:hover {
-  background: #0056b3;
+  background-color: #1d4ed8;
 }
 
 #weatherResult {
-  background: #e9f0fb;
-  padding: 15px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  min-height: 150px;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
   overflow-x: auto;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 15px;
+}
+
+table, th, td {
+  border: 1px solid #ccc;
 }
 
 th, td {
-  border: 1px solid #ccc;
-  padding: 8px 12px;
+  padding: 10px;
   text-align: center;
 }
 
-th {
-  background-color: #007bff;
-  color: white;
-}
-
-.history-section {
-  text-align: center;
-}
-
-#historyList {
-  list-style: none;
+ul {
+  list-style-type: none;
   padding: 0;
-  max-height: 150px;
-  overflow-y: auto;
-  margin-bottom: 10px;
 }
 
-#historyList li {
-  padding: 8px;
-  background: #f7f9fc;
-  margin: 4px auto;
-  max-width: 300px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+li {
+  margin: 5px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-#historyList li:hover {
-  background-color: #dceefb;
-}
-
-.delete-btn {
-  background: transparent;
-  border: none;
-  color: #ff4d4d;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 16px;
-  margin-left: 10px;
-}
-
-#cityInput{
-    background-color: #dcdcdc;
-    border:1px solid #f5fffa;
-}
-
-#modeSelect{
-        background-color: #dcdcdc;
-    border:1px solid #f5fffa;
 }
