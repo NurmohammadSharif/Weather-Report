@@ -1,113 +1,55 @@
-* {
-  box-sizing: border-box;
+body {
+  font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-}
-
-body {
-  font-family: "Segoe UI", sans-serif;
-  background: linear-gradient(to right, #6dd5ed, #2193b0);
-  color: #fff;
-  padding: 20px;
-  min-height: 100vh;
+  box-sizing: border-box;
+  background: linear-gradient(to right, #83a4d4, #b6fbff);
 }
 
 .container {
-  max-width: 900px;
+  max-width: 800px;
   margin: auto;
-  background: rgba(0, 0, 0, 0.3);
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-}
-
-h1, h3 {
-  text-align: center;
-  margin-bottom: 20px;
 }
 
 form {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  justify-content: center;
   margin-bottom: 20px;
 }
 
 input, select, button {
   padding: 10px;
-  font-size: 1rem;
-  border-radius: 8px;
+  font-size: 16px;
+  border-radius: 5px;
   border: none;
-  outline: none;
-}
-
-input, select {
-  flex: 1 1 200px;
-}
-
-button {
-  cursor: pointer;
-  background-color: #ffffff;
-  color: #333;
-  transition: background 0.3s ease;
-}
-
-button:hover {
-  background-color: #ddd;
-}
-
-#myLocationBtn {
-  display: block;
-  margin: 10px auto;
-  padding: 10px 20px;
 }
 
 #weatherResult {
-  margin-top: 20px;
-  font-size: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: white;
   padding: 15px;
-  border-radius: 10px;
-}
-
-#weatherResult h3 {
-  margin-bottom: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
 table {
   width: 100%;
-  margin-top: 15px;
   border-collapse: collapse;
-  color: white;
+  margin-top: 10px;
 }
 
 th, td {
   padding: 8px;
   border: 1px solid #ccc;
   text-align: center;
-  background-color: rgba(0, 0, 0, 0.2);
-}
-
-#historyList {
-  list-style: none;
-  margin-top: 10px;
 }
 
 #historyList li {
-  background: rgba(255, 255, 255, 0.1);
-  margin: 5px 0;
-  padding: 8px;
-  border-radius: 5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  cursor: pointer;
+  padding: 5px;
 }
 
-#historyList li button {
-  background: transparent;
-  color: red;
-  font-size: 1.2rem;
-  cursor: pointer;
-  border: none;
+#historyList li:hover {
+  background-color: #eee;
 }
