@@ -5,7 +5,51 @@ const historyList = document.getElementById("historyList");
 const clearHistoryBtn = document.getElementById("clearHistoryBtn");
 const modeSelect = document.getElementById("modeSelect");
 const myLocationBtn = document.getElementById("myLocationBtn");
-const suggestionsList = document.getElementById("suggestions");
+
+// Auto-suggest using OpenCage API
+const suggestBox = document.createElement("ul");
+suggestBox.id = "suggestBox";
+suggestBox.style.position = "absolute";
+suggestBox.style.zIndex = "1000";
+suggestBox.style.background = "#fff";
+suggestBox.style.border = "1px solid #ccc";
+suggestBox.style.listStyle = "none";
+suggestBox.style.padding = "0";
+suggestBox.style.marginTop = "2px";
+suggestBox.style.width = cityInput.offsetWidth + "px";
+cityInput.parentNode.insertBefore(suggestBox, cityInput.nextSibling);
+
+cityInput.addEventListener("input", async () => {
+  const query = cityInput.value.trim();
+  suggestBox.innerHTML = "";
+  if (query.length < 2) return;
+
+  try {
+    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=ed95aef3b8434dcd80f1a19a9fad96d8&limit=5&language=en`);
+    const data = await res.json();
+
+    data.results.forEach(item => {
+      const name = item.formatted;
+      const li = document.createElement("li");
+      li.textContent = name;
+      li.style.padding = "6px";
+      li.style.cursor = "pointer";
+      li.addEventListener("click", () => {
+        cityInput.value = name;
+        suggestBox.innerHTML = "";
+      });
+      suggestBox.appendChild(li);
+    });
+  } catch (e) {
+    console.error("Autocomplete error:", e);
+  }
+});
+
+document.addEventListener("click", (e) => {
+  if (!suggestBox.contains(e.target) && e.target !== cityInput) {
+    suggestBox.innerHTML = "";
+  }
+});
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -15,6 +59,7 @@ form.addEventListener("submit", (e) => {
     saveToHistory(city);
     displayHistory();
     cityInput.value = "";
+    suggestBox.innerHTML = "";
   }
 });
 
@@ -32,9 +77,16 @@ myLocationBtn.addEventListener("click", () => {
       try {
         const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
         const geoData = await geoRes.json();
-        const placeName = geoData.address.city || geoData.address.town || geoData.address.village || "Your Location";
-        fetchWeatherByCoords(lat, lon, placeName.toUpperCase());
-      } catch {
+
+        const address = geoData.address || {};
+        const place = address.city || address.town || address.village || address.hamlet || "Unknown Place";
+        const upazila = address.suburb || address.county || "Unknown Upazila";
+        const zilla = address.state_district || address.state || address.region || "Unknown Zilla";
+        const fullName = `${place.toUpperCase()} (${upazila}, ${zilla})`;
+
+        fetchWeatherByCoords(lat, lon, fullName);
+      } catch (err) {
+        console.error(err);
         fetchWeatherByCoords(lat, lon, "YOUR LOCATION");
       }
     }, () => {
@@ -212,31 +264,3 @@ async function fetchWeatherByCoords(lat, lon, city) {
 }
 
 window.onload = displayHistory;
-
-// 🔍 Autocomplete Suggestions Feature
-const apiKey = "ed95aef3b8434dcd80f1a19a9fad96d8"; // OpenCage API key
-
-cityInput.addEventListener("input", async () => {
-  const query = cityInput.value.trim();
-  if (query.length < 2) return;
-
-  try {
-    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=${apiKey}&limit=5&language=en`);
-    const data = await res.json();
-
-    suggestionsList.innerHTML = "";
-    const uniqueNames = new Set();
-
-    data.results.forEach((item) => {
-      const name = item.components.city || item.components.town || item.components.village || item.formatted;
-      if (!uniqueNames.has(name)) {
-        const option = document.createElement("option");
-        option.value = name;
-        suggestionsList.appendChild(option);
-        uniqueNames.add(name);
-      }
-    });
-  } catch (err) {
-    console.error("Suggestion fetch error:", err);
-  }
-});
