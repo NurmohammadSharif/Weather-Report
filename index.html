@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Weather Report</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Weather Report</h1>
+    <form id="weatherForm">
+      <input type="text" id="cityInput" placeholder="Enter city name" required />
+      <select id="modeSelect">
+        <option value="live">Live Weather</option>
+        <option value="past">Past 7 Days</option>
+        <option value="future">Next 7 Days</option>
+      </select>
+      <button type="submit">Get Weather</button>
+    </form>
+
+    <div id="weatherResult"></div>
+
+    <div class="history-section">
+      <h2>Search History</h2>
+      <ul id="historyList"></ul>
+      <button id="clearHistoryBtn">Clear All History</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
