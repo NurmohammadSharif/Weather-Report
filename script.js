@@ -8,7 +8,7 @@ const clearHistoryBtn = document.getElementById("clearHistoryBtn");
 const liveLocationBtn = document.getElementById("liveLocationBtn");
 const modeSelect = document.getElementById("modeSelect");
 
-// Search by city/upazila
+// --- Event Listeners ---
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const city = cityInput.value.trim().toUpperCase();
@@ -20,60 +20,80 @@ form.addEventListener("submit", (e) => {
   }
 });
 
-// Clear all history
 clearHistoryBtn.addEventListener("click", () => {
   localStorage.removeItem("weatherHistory");
   displayHistory();
   weatherResult.innerHTML = "";
 });
 
-// Use browser geolocation
 liveLocationBtn.addEventListener("click", () => {
+  weatherResult.innerHTML = "⏳ Detecting your location…";
   if (!navigator.geolocation) {
-    alert("Geolocation is not supported by your browser.");
+    weatherResult.innerHTML = `<p style="color:red;">❌ Geolocation not supported.</p>`;
     return;
   }
 
-  weatherResult.innerHTML = "Detecting your location…";
-  navigator.geolocation.getCurrentPosition(async (position) => {
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-
-    try {
-      // Reverse geocode to get a place name
-      const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`
-      );
-      const geoData = await geoRes.json();
-      const addr = geoData.address || {};
-      const city =
-        addr.city ||
-        addr.town ||
-        addr.village ||
-        addr.hamlet ||
-        addr.suburb ||
-        addr.county ||
-        addr.state_district ||
-        addr.state ||
-        "Unknown Location";
-
-      if (city === "Unknown Location") {
-        alert("Could not detect a named place—showing weather by coords.");
-      }
-
-      fetchWeather(city, lat, lon);
-    } catch (err) {
-      console.error("Reverse geocoding failed:", err);
-      weatherResult.innerHTML = `<p style="color:red;">❌ Failed to determine your place name.</p>`;
-      // still try fetch by coords:
-      fetchWeather("Your Location", lat, lon);
-    }
-  }, () => {
-    weatherResult.innerHTML = `<p style="color:red;">❌ Location access denied.</p>`;
+  navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError, {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0
   });
 });
 
-// Save to localStorage history
+// --- Geolocation Callbacks ---
+async function onGeoSuccess(pos) {
+  const lat = pos.coords.latitude;
+  const lon = pos.coords.longitude;
+
+  // Show debug coords
+  weatherResult.innerHTML = `<p>📍 Coordinates: ${lat.toFixed(4)}, ${lon.toFixed(4)}</p>`;
+
+  // Reverse-geocode to get a name
+  try {
+    const geoRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=jsonv2`
+    );
+    const geoData = await geoRes.json();
+    const addr = geoData.address || {};
+    const city =
+      addr.city ||
+      addr.town ||
+      addr.village ||
+      addr.hamlet ||
+      addr.suburb ||
+      addr.county ||
+      addr.state ||
+      "Your Location";
+
+    fetchWeather(city, lat, lon);
+  } catch (err) {
+    console.error("Reverse geocoding error", err);
+    weatherResult.innerHTML +=
+      `<p style="color:orange;">⚠️ Couldn’t resolve place name; showing by coords.</p>`;
+    fetchWeather("Your Location", lat, lon);
+  }
+}
+
+function onGeoError(err) {
+  console.warn(`Geolocation error (${err.code}): ${err.message}`);
+  let msg;
+  switch(err.code) {
+    case err.PERMISSION_DENIED:
+      msg = "Permission denied. Please allow location access.";
+      break;
+    case err.POSITION_UNAVAILABLE:
+      msg = "Position unavailable.";
+      break;
+    case err.TIMEOUT:
+      msg = "Geolocation timed out.";
+      break;
+    default:
+      msg = "Unknown geolocation error.";
+  }
+  weatherResult.innerHTML = `<p style="color:red;">❌ ${msg}</p>`;
+}
+
+// --- History Management ---
 function saveToHistory(city) {
   const history = JSON.parse(localStorage.getItem("weatherHistory")) || [];
   if (!history.includes(city)) {
@@ -82,7 +102,6 @@ function saveToHistory(city) {
   }
 }
 
-// Render history list
 function displayHistory() {
   const history = JSON.parse(localStorage.getItem("weatherHistory")) || [];
   historyList.innerHTML = "";
@@ -90,34 +109,34 @@ function displayHistory() {
     const li = document.createElement("li");
     const span = document.createElement("span");
     span.textContent = city;
-    span.onclick = () => {
-      fetchWeather(city);
-    };
+    span.style.cursor = "pointer";
+    span.onclick = () => fetchWeather(city);
+
     const del = document.createElement("button");
     del.textContent = "❌";
-    del.onclick = () => {
+    del.onclick = (e) => {
+      e.stopPropagation();
       const updated = history.filter((c) => c !== city);
       localStorage.setItem("weatherHistory", JSON.stringify(updated));
       displayHistory();
     };
+
     li.appendChild(span);
     li.appendChild(del);
     historyList.appendChild(li);
   });
 }
 
-// Main fetch function
+// --- Weather Fetching ---
 async function fetchWeather(city, lat = null, lon = null) {
-  weatherResult.innerHTML = "Loading…";
+  weatherResult.innerHTML = "⏳ Loading weather…";
   const mode = modeSelect.value;
 
   try {
-    // If coords not passed, geocode by name
+    // Geocode if needed
     if (lat == null || lon == null) {
       const geoRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-          city
-        )}&countrycodes=bd,us,gb&format=json&limit=1`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1&countrycodes=bd`
       );
       const geoData = await geoRes.json();
       if (!geoData.length) {
@@ -128,45 +147,47 @@ async function fetchWeather(city, lat = null, lon = null) {
       lon = geoData[0].lon;
     }
 
+    // Live weather
     if (mode === "live") {
-      // Live weather + daily summary
       const res = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-          `&current_weather=true&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min&timezone=auto`
+          `&current_weather=true` +
+          `&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min` +
+          `&timezone=auto`
       );
       const data = await res.json();
-      const current = data.current_weather;
-      const daily = data.daily;
+      const cur = data.current_weather;
+      const d = data.daily;
       const humidity = (
-        (daily.relative_humidity_2m_max[0] + daily.relative_humidity_2m_min[0]) /
+        (d.relative_humidity_2m_max[0] + d.relative_humidity_2m_min[0]) /
         2
       ).toFixed(1);
 
       weatherResult.innerHTML = `
         <h3>📍 ${city}</h3>
-        <p>🌡 Current: ${current.temperature} °C</p>
-        <p>🌡 Max Today: ${daily.temperature_2m_max[0]} °C</p>
-        <p>🌡 Min Today: ${daily.temperature_2m_min[0]} °C</p>
-        <p>🌡 Feels Like Max: ${daily.apparent_temperature_max[0]} °C</p>
-        <p>🌡 Feels Like Min: ${daily.apparent_temperature_min[0]} °C</p>
+        <p>🌡 Current: ${cur.temperature} °C</p>
+        <p>🌡 Max Today: ${d.temperature_2m_max[0]} °C</p>
+        <p>🌡 Min Today: ${d.temperature_2m_min[0]} °C</p>
+        <p>🌡 Feels Like Max: ${d.apparent_temperature_max[0]} °C</p>
+        <p>🌡 Feels Like Min: ${d.apparent_temperature_min[0]} °C</p>
         <p>💧 Humidity: ${humidity} %</p>
-        <p>💨 Wind Speed: ${current.windspeed} km/h</p>
-        <p>📍 Lat: ${parseFloat(lat).toFixed(4)}, Lon: ${parseFloat(lon).toFixed(4)}</p>
+        <p>💨 Wind: ${cur.windspeed} km/h</p>
+        <p>📍 [${lat.toFixed(4)}, ${lon.toFixed(4)}]</p>
       `;
     } else {
-      // Past or future 7-day forecast
+      // Past/Future 7 days
       const today = new Date();
       let startDate, endDate;
       if (mode === "past") {
-        const past = new Date(today);
-        past.setDate(today.getDate() - 7);
-        startDate = past.toISOString().split("T")[0];
-        endDate = today.toISOString().split("T")[0];
+        startDate = new Date(today.setDate(today.getDate() - 7))
+          .toISOString()
+          .split("T")[0];
+        endDate = new Date().toISOString().split("T")[0];
       } else {
-        startDate = today.toISOString().split("T")[0];
-        const fut = new Date(today);
-        fut.setDate(today.getDate() + 7);
-        endDate = fut.toISOString().split("T")[0];
+        startDate = new Date().toISOString().split("T")[0];
+        endDate = new Date(today.setDate(today.getDate() + 7))
+          .toISOString()
+          .split("T")[0];
       }
 
       const apiUrl =
@@ -178,50 +199,47 @@ async function fetchWeather(city, lat = null, lon = null) {
         `${apiUrl}?latitude=${lat}&longitude=${lon}` +
           `&start_date=${startDate}&end_date=${endDate}` +
           `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min` +
-          `&hourly=windspeed_10m&timezone=auto`
+          `&hourly=windspeed_10m` +
+          `&timezone=auto`
       );
       const data = await res.json();
-      const daily = data.daily;
-      const hourly = data.hourly;
+      const d = data.daily;
+      const h = data.hourly;
 
-      // Helper to get min wind
-      function getMinWind(dateStr) {
-        const speeds = hourly.time
-          .map((t, i) => (t.startsWith(dateStr) ? hourly.windspeed_10m[i] : null))
+      function getMinWind(date) {
+        const speeds = h.time
+          .map((t, i) => (t.startsWith(date) ? h.windspeed_10m[i] : null))
           .filter((v) => v != null);
         return speeds.length ? Math.min(...speeds).toFixed(1) : "-";
       }
 
-      let html = `<h3>📍 ${city} — ${mode === "past" ? "Past" : "Next"} 7 Days</h3><table>`;
-      html += `<tr>
+      let html = `<h3>📍 ${city} — ${
+        mode === "past" ? "Past 7 Days" : "Next 7 Days"
+      }</h3><table><tr>
         <th>Date</th><th>Max °C</th><th>Min °C</th><th>Feels Max</th><th>Feels Min</th><th>Hum %</th><th>Rain mm</th><th>Wind Max</th><th>Wind Min</th>
       </tr>`;
-
-      for (let i = 0; i < daily.time.length; i++) {
-        const hum = (
-          (daily.relative_humidity_2m_max[i] + daily.relative_humidity_2m_min[i]) /
-          2
-        ).toFixed(1);
+      for (let i = 0; i < d.time.length; i++) {
+        const hum = ((d.relative_humidity_2m_max[i] + d.relative_humidity_2m_min[i]) / 2).toFixed(1);
         html += `<tr>
-          <td>${daily.time[i]}</td>
-          <td>${daily.temperature_2m_max[i]}</td>
-          <td>${daily.temperature_2m_min[i]}</td>
-          <td>${daily.apparent_temperature_max[i]}</td>
-          <td>${daily.apparent_temperature_min[i]}</td>
+          <td>${d.time[i]}</td>
+          <td>${d.temperature_2m_max[i]}</td>
+          <td>${d.temperature_2m_min[i]}</td>
+          <td>${d.apparent_temperature_max[i]}</td>
+          <td>${d.apparent_temperature_min[i]}</td>
           <td>${hum}</td>
-          <td>${daily.precipitation_sum[i]}</td>
-          <td>${daily.windspeed_10m_max[i]}</td>
-          <td>${getMinWind(daily.time[i])}</td>
+          <td>${d.precipitation_sum[i]}</td>
+          <td>${d.windspeed_10m_max[i]}</td>
+          <td>${getMinWind(d.time[i])}</td>
         </tr>`;
       }
       html += "</table>";
       weatherResult.innerHTML = html;
     }
-  } catch (err) {
-    console.error(err);
-    weatherResult.innerHTML = `<p style="color:red;">❌ Unable to fetch weather data.</p>`;
+  } catch (error) {
+    console.error(error);
+    weatherResult.innerHTML = `<p style="color:red;">❌ Error fetching weather.</p>`;
   }
 }
 
-// Load history on startup
+// Initialize history on load
 displayHistory();
