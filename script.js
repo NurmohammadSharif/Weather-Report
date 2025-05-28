@@ -5,6 +5,7 @@ const historyList = document.getElementById("historyList");
 const clearHistoryBtn = document.getElementById("clearHistoryBtn");
 const modeSelect = document.getElementById("modeSelect");
 const myLocationBtn = document.getElementById("myLocationBtn");
+const suggestionsList = document.getElementById("suggestions");
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -211,3 +212,31 @@ async function fetchWeatherByCoords(lat, lon, city) {
 }
 
 window.onload = displayHistory;
+
+// 🔍 Autocomplete Suggestions Feature
+const apiKey = "ed95aef3b8434dcd80f1a19a9fad96d8"; // OpenCage API key
+
+cityInput.addEventListener("input", async () => {
+  const query = cityInput.value.trim();
+  if (query.length < 2) return;
+
+  try {
+    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=${apiKey}&limit=5&language=en`);
+    const data = await res.json();
+
+    suggestionsList.innerHTML = "";
+    const uniqueNames = new Set();
+
+    data.results.forEach((item) => {
+      const name = item.components.city || item.components.town || item.components.village || item.formatted;
+      if (!uniqueNames.has(name)) {
+        const option = document.createElement("option");
+        option.value = name;
+        suggestionsList.appendChild(option);
+        uniqueNames.add(name);
+      }
+    });
+  } catch (err) {
+    console.error("Suggestion fetch error:", err);
+  }
+});
