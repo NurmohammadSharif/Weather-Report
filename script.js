@@ -77,9 +77,9 @@ myLocationBtn.addEventListener("click", () => {
       try {
         const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
         const geoData = await geoRes.json();
-
         const address = geoData.address || {};
-        const place = address.city || address.town || address.village || address.hamlet || "Unknown Place";
+
+        const place = address.city || address.town || address.village || address.hamlet || address.suburb || "Unknown Place";
         const upazila = address.suburb || address.county || "Unknown Upazila";
         const zilla = address.state_district || address.state || address.region || "Unknown Zilla";
         const fullName = `${place.toUpperCase()} (${upazila}, ${zilla})`;
@@ -154,6 +154,9 @@ async function fetchWeatherByCoords(lat, lon, city) {
   const mode = modeSelect.value;
 
   try {
+    const today = new Date();
+    let startDate, endDate;
+
     if (mode === "live") {
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
@@ -187,76 +190,77 @@ async function fetchWeatherByCoords(lat, lon, city) {
         <p>💧 Humidity: ${humidity} %</p>
         <p>🌍 Latitude: ${lat}, Longitude: ${lon}</p>
       `;
-    } else {
-      const today = new Date();
-      let startDate, endDate;
-
-      if (mode === "past") {
-        const pastStart = new Date(today);
-        pastStart.setDate(today.getDate() - 7);
-        startDate = pastStart.toISOString().split("T")[0];
-        endDate = today.toISOString().split("T")[0];
-      } else {
-        startDate = today.toISOString().split("T")[0];
-        const futureEnd = new Date(today);
-        futureEnd.setDate(today.getDate() + 7);
-        endDate = futureEnd.toISOString().split("T")[0];
-      }
-
-      const apiUrl = mode === "past"
-        ? "https://archive-api.open-meteo.com/v1/archive"
-        : "https://api.open-meteo.com/v1/forecast";
-
-      const res = await fetch(
-        `${apiUrl}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}` +
-        `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min` +
-        `&hourly=windspeed_10m&timezone=auto`
-      );
-
-      const data = await res.json();
-
-      if (!data.daily || !data.hourly) {
-        weatherResult.innerHTML = `<p style="color:red;">❌ Weather data unavailable.</p>`;
-        return;
-      }
-
-      const hourlyTimes = data.hourly.time;
-      const hourlyWinds = data.hourly.windspeed_10m;
-
-      const getMinWind = (dateStr) => {
-        const speeds = [];
-        for (let i = 0; i < hourlyTimes.length; i++) {
-          if (hourlyTimes[i].startsWith(dateStr)) {
-            speeds.push(hourlyWinds[i]);
-          }
-        }
-        return speeds.length ? Math.min(...speeds).toFixed(1) : "-";
-      };
-
-      let html = `<h3>📍 ${city} (${mode === "past" ? "Past" : "Next"} 7 Days)</h3><table><tr>
-          <th>Date</th><th>Max Temp</th><th>Min Temp</th><th>Feels Max</th><th>Feels Min</th>
-          <th>Precip (mm)</th><th>Max Wind</th><th>Min Wind</th><th>Humidity Max</th><th>Humidity Min</th>
-        </tr>`;
-
-      for (let i = 0; i < data.daily.time.length; i++) {
-        const d = data.daily;
-        html += `<tr>
-          <td>${d.time[i]}</td>
-          <td>${d.temperature_2m_max[i]}</td>
-          <td>${d.temperature_2m_min[i]}</td>
-          <td>${d.apparent_temperature_max[i]}</td>
-          <td>${d.apparent_temperature_min[i]}</td>
-          <td>${d.precipitation_sum[i]}</td>
-          <td>${d.windspeed_10m_max[i]}</td>
-          <td>${getMinWind(d.time[i])}</td>
-          <td>${d.relative_humidity_2m_max[i]}</td>
-          <td>${d.relative_humidity_2m_min[i]}</td>
-        </tr>`;
-      }
-
-      html += "</table>";
-      weatherResult.innerHTML = html;
+      return;
     }
+
+    if (mode === "past") {
+      const pastStart = new Date(today);
+      pastStart.setDate(today.getDate() - 7);
+      startDate = pastStart.toISOString().split("T")[0];
+      endDate = new Date(today.setDate(today.getDate() - 1)).toISOString().split("T")[0]; // Exclude today
+    } else {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      startDate = tomorrow.toISOString().split("T")[0];
+
+      const futureEnd = new Date(tomorrow);
+      futureEnd.setDate(futureEnd.getDate() + 6); // 7 days excluding today
+      endDate = futureEnd.toISOString().split("T")[0];
+    }
+
+    const apiUrl = mode === "past"
+      ? "https://archive-api.open-meteo.com/v1/archive"
+      : "https://api.open-meteo.com/v1/forecast";
+
+    const res = await fetch(
+      `${apiUrl}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min` +
+      `&hourly=windspeed_10m&timezone=auto`
+    );
+
+    const data = await res.json();
+
+    if (!data.daily || !data.hourly) {
+      weatherResult.innerHTML = `<p style="color:red;">❌ Weather data unavailable.</p>`;
+      return;
+    }
+
+    const hourlyTimes = data.hourly.time;
+    const hourlyWinds = data.hourly.windspeed_10m;
+
+    const getMinWind = (dateStr) => {
+      const speeds = [];
+      for (let i = 0; i < hourlyTimes.length; i++) {
+        if (hourlyTimes[i].startsWith(dateStr)) {
+          speeds.push(hourlyWinds[i]);
+        }
+      }
+      return speeds.length ? Math.min(...speeds).toFixed(1) : "-";
+    };
+
+    let html = `<h3>📍 ${city} (${mode === "past" ? "Past" : "Next"} 7 Days)</h3><table><tr>
+        <th>Date</th><th>Max Temp</th><th>Min Temp</th><th>Feels Max</th><th>Feels Min</th>
+        <th>Precip (mm)</th><th>Max Wind</th><th>Min Wind</th><th>Humidity Max</th><th>Humidity Min</th>
+      </tr>`;
+
+    for (let i = 0; i < data.daily.time.length; i++) {
+      const d = data.daily;
+      html += `<tr>
+        <td>${d.time[i]}</td>
+        <td>${d.temperature_2m_max[i]}</td>
+        <td>${d.temperature_2m_min[i]}</td>
+        <td>${d.apparent_temperature_max[i]}</td>
+        <td>${d.apparent_temperature_min[i]}</td>
+        <td>${d.precipitation_sum[i]}</td>
+        <td>${d.windspeed_10m_max[i]}</td>
+        <td>${getMinWind(d.time[i])}</td>
+        <td>${d.relative_humidity_2m_max[i]}</td>
+        <td>${d.relative_humidity_2m_min[i]}</td>
+      </tr>`;
+    }
+
+    html += "</table>";
+    weatherResult.innerHTML = html;
   } catch (err) {
     console.error(err);
     weatherResult.innerHTML = `<p style="color:red;">❌ Unable to fetch weather. Try again later.</p>`;
