@@ -8,24 +8,21 @@
 </head>
 <body>
   <div class="container">
-    <h1>🌤 Weather App</h1>
+    <h1>🌦 Weather App</h1>
     <form id="weatherForm">
-      <input list="suggestions" type="text" id="cityInput" placeholder="Enter City or Upazila" autocomplete="off" required />
-      <datalist id="suggestions"></datalist>
+      <input type="text" id="cityInput" placeholder="Enter City or Upazila" required />
       <select id="modeSelect">
         <option value="live">Live</option>
         <option value="past">Past 7 Days</option>
         <option value="future">Next 7 Days</option>
       </select>
-      <button type="submit">Get Weather</button>
-      <button type="button" id="myLocationBtn">📍 My Location</button>
+      <button type="submit">Search</button>
     </form>
-
+    <button id="myLocationBtn">📍 My Location</button>
     <div id="weatherResult"></div>
-
-    <h2>📜 Search History</h2>
+    <h3>Search History</h3>
     <ul id="historyList"></ul>
-    <button id="clearHistoryBtn">Clear All History</button>
+    <button id="clearHistoryBtn">🗑 Clear History</button>
   </div>
 
   <script src="script.js"></script>
