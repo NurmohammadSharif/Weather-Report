@@ -1,3 +1,4 @@
+// DOM Elements
 const form = document.getElementById("weatherForm");
 const cityInput = document.getElementById("cityInput");
 const weatherResult = document.getElementById("weatherResult");
@@ -6,36 +7,29 @@ const clearHistoryBtn = document.getElementById("clearHistoryBtn");
 const modeSelect = document.getElementById("modeSelect");
 const myLocationBtn = document.getElementById("myLocationBtn");
 
-// Auto-suggest using OpenCage API
+// Create auto-suggest dropdown
 const suggestBox = document.createElement("ul");
 suggestBox.id = "suggestBox";
-suggestBox.style.position = "absolute";
-suggestBox.style.zIndex = "1000";
-suggestBox.style.background = "#fff";
-suggestBox.style.border = "1px solid #ccc";
-suggestBox.style.listStyle = "none";
-suggestBox.style.padding = "0";
-suggestBox.style.marginTop = "2px";
-suggestBox.style.width = cityInput.offsetWidth + "px";
+suggestBox.className = "suggest-box";
 cityInput.parentNode.insertBefore(suggestBox, cityInput.nextSibling);
 
+// --- Event Listeners --- //
+
+// Auto-suggest cities on input
 cityInput.addEventListener("input", async () => {
   const query = cityInput.value.trim();
   suggestBox.innerHTML = "";
   if (query.length < 2) return;
 
   try {
-    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=ed95aef3b8434dcd80f1a19a9fad96d8&limit=5&language=en`);
+    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=ed95aef3b8434dcd80f1a19a9fad96d8&limit=5`);
     const data = await res.json();
 
     data.results.forEach(item => {
-      const name = item.formatted;
       const li = document.createElement("li");
-      li.textContent = name;
-      li.style.padding = "6px";
-      li.style.cursor = "pointer";
+      li.textContent = item.formatted;
       li.addEventListener("click", () => {
-        cityInput.value = name;
+        cityInput.value = item.formatted;
         suggestBox.innerHTML = "";
       });
       suggestBox.appendChild(li);
@@ -45,215 +39,250 @@ cityInput.addEventListener("input", async () => {
   }
 });
 
+// Hide suggestions when clicking elsewhere
 document.addEventListener("click", (e) => {
-  if (!suggestBox.contains(e.target) && e.target !== cityInput) {
-    suggestBox.innerHTML = "";
-  }
+  if (!suggestBox.contains(e.target) suggestBox.innerHTML = "";
 });
 
+// Form submission
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const city = cityInput.value.trim().toUpperCase();
+  const city = cityInput.value.trim();
   if (city) {
     fetchWeatherByCity(city);
     saveToHistory(city);
-    displayHistory();
     cityInput.value = "";
-    suggestBox.innerHTML = "";
   }
 });
 
+// Clear history
 clearHistoryBtn.addEventListener("click", () => {
   localStorage.removeItem("weatherHistory");
-  displayHistory();
-  weatherResult.innerHTML = "";
+  historyList.innerHTML = "";
 });
 
-myLocationBtn.addEventListener("click", () => {
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
-      try {
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-        const geoData = await geoRes.json();
-        const address = geoData.address || {};
+// Get precise location
+myLocationBtn.addEventListener("click", getPreciseLocation);
 
-        const place = address.city || address.town || address.village || address.hamlet || address.suburb || "Unknown Place";
-        const upazila = address.suburb || address.county || "Unknown Upazila";
-        const zilla = address.state_district || address.state || address.region || "Unknown Zilla";
-        const fullName = `${place.toUpperCase()} (${upazila}, ${zilla})`;
+// --- Core Functions --- //
 
-        fetchWeatherByCoords(lat, lon, fullName);
-      } catch (err) {
-        console.error(err);
-        fetchWeatherByCoords(lat, lon, "YOUR LOCATION");
-      }
-    }, () => {
-      weatherResult.innerHTML = `<p style="color:red;">❌ Failed to get your location.</p>`;
-    });
-  } else {
-    weatherResult.innerHTML = `<p style="color:red;">❌ Geolocation not supported in this browser.</p>`;
+// Improved location detection
+async function getPreciseLocation() {
+  if (!navigator.geolocation) {
+    showError("Geolocation not supported");
+    return;
   }
-});
 
-function saveToHistory(city) {
-  let history = JSON.parse(localStorage.getItem("weatherHistory")) || [];
-  if (!history.includes(city)) {
-    history.push(city);
+  weatherResult.innerHTML = "<div class='loading'>Detecting your precise location...</div>";
+
+  try {
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000
+      });
+    });
+
+    const { latitude: lat, longitude: lon } = position.coords;
+    const locationName = await reverseGeocode(lat, lon);
+    
+    fetchWeatherByCoords(lat, lon, locationName);
+    saveToHistory(locationName);
+
+  } catch (error) {
+    handleLocationError(error);
+  }
+}
+
+// Get readable address from coordinates
+async function reverseGeocode(lat, lon) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`);
+    const data = await response.json();
+    
+    const address = data.address || {};
+    const parts = [
+      address.road,
+      address.neighbourhood,
+      address.suburb,
+      address.village,
+      address.town,
+      address.city,
+      address.county,
+      address.state
+    ].filter(Boolean);
+
+    return parts.length > 0 
+      ? `${parts.join(", ")} (${lat.toFixed(4)}, ${lon.toFixed(4)})` 
+      : `Your Location (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+  } catch (e) {
+    console.error("Geocoding error:", e);
+    return `Your Location (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+  }
+}
+
+// Fetch weather by city name
+async function fetchWeatherByCity(city) {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json`);
+    const data = await response.json();
+
+    if (data.length === 0) {
+      showError("Location not found");
+      return;
+    }
+
+    const { lat, lon, display_name } = data[0];
+    fetchWeatherByCoords(lat, lon, display_name || city);
+
+  } catch (error) {
+    showError("Failed to fetch location");
+    console.error(error);
+  }
+}
+
+// Main weather data fetcher
+async function fetchWeatherByCoords(lat, lon, locationName) {
+  weatherResult.innerHTML = "<div class='loading'>Loading weather data...</div>";
+  const mode = modeSelect.value;
+
+  try {
+    let url, dateRange;
+    
+    if (mode === "live") {
+      url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min`;
+    } else {
+      const dates = getDateRange(mode);
+      url = `https://${mode === "past" ? "archive-api" : "api"}.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&start_date=${dates.start}&end_date=${dates.end}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max`;
+    }
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (mode === "live") {
+      displayCurrentWeather(data, locationName, lat, lon);
+    } else {
+      displayForecast(data, locationName, lat, lon, mode);
+    }
+
+  } catch (error) {
+    showError("Failed to fetch weather data");
+    console.error(error);
+  }
+}
+
+// --- Helper Functions --- //
+
+function getDateRange(mode) {
+  const today = new Date();
+  const start = new Date(today);
+  
+  if (mode === "past") {
+    start.setDate(today.getDate() - 7);
+    return {
+      start: start.toISOString().split("T")[0],
+      end: new Date(today.setDate(today.getDate() - 1)).toISOString().split("T")[0]
+    };
+  } else {
+    start.setDate(today.getDate() + 1);
+    return {
+      start: start.toISOString().split("T")[0],
+      end: new Date(start.setDate(start.getDate() + 6)).toISOString().split("T")[0]
+    };
+  }
+}
+
+function displayCurrentWeather(data, locationName, lat, lon) {
+  const current = data.current_weather;
+  const daily = data.daily;
+
+  weatherResult.innerHTML = `
+    <div class="weather-card current">
+      <h3>📍 ${locationName}</h3>
+      <div class="weather-grid">
+        <div><span>🌡 Temperature:</span> ${current.temperature}°C</div>
+        <div><span>💨 Wind:</span> ${current.windspeed} km/h</div>
+        <div><span>⬆️ Max:</span> ${daily.temperature_2m_max[0]}°C</div>
+        <div><span>⬇️ Min:</span> ${daily.temperature_2m_min[0]}°C</div>
+        <div><span>📍 Coordinates:</span> ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>
+      </div>
+    </div>`;
+}
+
+function displayForecast(data, locationName, lat, lon, mode) {
+  let html = `
+    <div class="weather-card forecast">
+      <h3>📍 ${locationName} (${mode === "past" ? "Past Week" : "Next Week"})</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Max (°C)</th>
+              <th>Min (°C)</th>
+              <th>Rain (mm)</th>
+              <th>Wind (km/h)</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+  data.daily.time.forEach((date, i) => {
+    html += `
+            <tr>
+              <td>${date}</td>
+              <td>${data.daily.temperature_2m_max[i]}</td>
+              <td>${data.daily.temperature_2m_min[i]}</td>
+              <td>${data.daily.precipitation_sum[i]}</td>
+              <td>${data.daily.windspeed_10m_max[i]}</td>
+            </tr>`;
+  });
+
+  html += `
+          </tbody>
+        </table>
+      </div>
+      <div class="coordinates">Coordinates: ${lat.toFixed(4)}, ${lon.toFixed(4)}</div>
+    </div>`;
+
+  weatherResult.innerHTML = html;
+}
+
+function saveToHistory(location) {
+  const history = JSON.parse(localStorage.getItem("weatherHistory") || []);
+  if (!history.includes(location)) {
+    history.push(location);
     localStorage.setItem("weatherHistory", JSON.stringify(history));
+    displayHistory();
   }
 }
 
 function displayHistory() {
-  const history = JSON.parse(localStorage.getItem("weatherHistory")) || [];
-  historyList.innerHTML = "";
-
-  history.slice().reverse().forEach((city) => {
-    const li = document.createElement("li");
-    li.textContent = city;
-    li.onclick = () => {
-      cityInput.value = city;
-      fetchWeatherByCity(city);
-    };
-
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "❌";
-    delBtn.onclick = (e) => {
-      e.stopPropagation();
-      const updated = history.filter((item) => item !== city);
-      localStorage.setItem("weatherHistory", JSON.stringify(updated));
-      displayHistory();
-    };
-
-    li.appendChild(delBtn);
-    historyList.appendChild(li);
-  });
+  const history = JSON.parse(localStorage.getItem("weatherHistory") || []);
+  historyList.innerHTML = history.reverse().map(item => `
+    <li>
+      ${item.split(" (")[0]}
+      <button onclick="removeFromHistory('${item}')">❌</button>
+    </li>
+  `).join("");
 }
 
-async function fetchWeatherByCity(city) {
-  try {
-    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&format=json`);
-    const geoData = await geoRes.json();
-
-    if (!geoData.length) {
-      weatherResult.innerHTML = `<p style="color:red;">❌ City not found.</p>`;
-      return;
-    }
-
-    const lat = geoData[0].lat;
-    const lon = geoData[0].lon;
-    fetchWeatherByCoords(lat, lon, city);
-  } catch (err) {
-    weatherResult.innerHTML = `<p style="color:red;">❌ Error fetching city location.</p>`;
-  }
+function removeFromHistory(item) {
+  const history = JSON.parse(localStorage.getItem("weatherHistory") || []);
+  const updated = history.filter(i => i !== item);
+  localStorage.setItem("weatherHistory", JSON.stringify(updated));
+  displayHistory();
 }
 
-async function fetchWeatherByCoords(lat, lon, city) {
-  weatherResult.innerHTML = "Loading...";
-  const mode = modeSelect.value;
-
-  try {
-    const today = new Date();
-    let startDate, endDate;
-
-    if (mode === "live") {
-      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min&timezone=auto`);
-      const weatherData = await weatherRes.json();
-      const current = weatherData.current_weather;
-      const daily = weatherData.daily;
-
-      if (!current) {
-        weatherResult.innerHTML = `<p style="color:red;">❌ Current weather data unavailable.</p>`;
-        return;
-      }
-
-      let humidity = "-";
-      if (daily.relative_humidity_2m_max && daily.relative_humidity_2m_min) {
-        humidity = ((daily.relative_humidity_2m_max[0] + daily.relative_humidity_2m_min[0]) / 2).toFixed(1);
-      }
-
-      weatherResult.innerHTML = `
-        <h3>📍 ${city}</h3>
-        <p>🌡 Current Temperature: ${current.temperature} °C</p>
-        <p>🌡 Max Temp (Today): ${daily.temperature_2m_max[0]} °C</p>
-        <p>🌡 Min Temp (Today): ${daily.temperature_2m_min[0]} °C</p>
-        <p>🌡 Feels Like Max: ${daily.apparent_temperature_max[0]} °C</p>
-        <p>🌡 Feels Like Min: ${daily.apparent_temperature_min[0]} °C</p>
-        <p>💨 Wind Speed: ${current.windspeed} km/h</p>
-        <p>💧 Humidity: ${humidity} %</p>
-        <p>🌍 Latitude: ${lat}, Longitude: ${lon}</p>`;
-      return;
-    }
-
-    if (mode === "past") {
-      const pastStart = new Date(today);
-      pastStart.setDate(today.getDate() - 7);
-      startDate = pastStart.toISOString().split("T")[0];
-      endDate = new Date(today.setDate(today.getDate() - 1)).toISOString().split("T")[0];
-    } else {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      startDate = tomorrow.toISOString().split("T")[0];
-
-      const futureEnd = new Date(tomorrow);
-      futureEnd.setDate(futureEnd.getDate() + 6);
-      endDate = futureEnd.toISOString().split("T")[0];
-    }
-
-    const apiUrl = mode === "past"
-      ? "https://archive-api.open-meteo.com/v1/archive"
-      : "https://api.open-meteo.com/v1/forecast";
-
-    const res = await fetch(`${apiUrl}?latitude=${lat}&longitude=${lon}&start_date=${startDate}&end_date=${endDate}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,apparent_temperature_max,apparent_temperature_min,relative_humidity_2m_max,relative_humidity_2m_min&hourly=windspeed_10m&timezone=auto`);
-    const data = await res.json();
-
-    if (!data.daily || !data.hourly) {
-      weatherResult.innerHTML = `<p style="color:red;">❌ Weather data unavailable.</p>`;
-      return;
-    }
-
-    const hourlyTimes = data.hourly.time;
-    const hourlyWinds = data.hourly.windspeed_10m;
-
-    const getMinWind = (dateStr) => {
-      const speeds = [];
-      for (let i = 0; i < hourlyTimes.length; i++) {
-        if (hourlyTimes[i].startsWith(dateStr)) {
-          speeds.push(hourlyWinds[i]);
-        }
-      }
-      return speeds.length ? Math.min(...speeds).toFixed(1) : "-";
-    };
-
-    let html = `<h3>📍 ${city} (${mode === "past" ? "Past" : "Next"} 7 Days)</h3><table><tr>
-        <th>Date</th><th>Max Temp</th><th>Min Temp</th><th>Feels Max</th><th>Feels Min</th>
-        <th>Precip (mm)</th><th>Max Wind</th><th>Min Wind</th><th>Humidity Max</th><th>Humidity Min</th>
-      </tr>`;
-
-    for (let i = 0; i < data.daily.time.length; i++) {
-      const d = data.daily;
-      html += `<tr>
-        <td>${d.time[i]}</td>
-        <td>${d.temperature_2m_max[i]}</td>
-        <td>${d.temperature_2m_min[i]}</td>
-        <td>${d.apparent_temperature_max[i]}</td>
-        <td>${d.apparent_temperature_min[i]}</td>
-        <td>${d.precipitation_sum[i]}</td>
-        <td>${d.windspeed_10m_max[i]}</td>
-        <td>${getMinWind(d.time[i])}</td>
-        <td>${d.relative_humidity_2m_max[i]}</td>
-        <td>${d.relative_humidity_2m_min[i]}</td>
-      </tr>`;
-    }
-
-    html += "</table>";
-    weatherResult.innerHTML = html;
-  } catch (err) {
-    console.error(err);
-    weatherResult.innerHTML = `<p style="color:red;">❌ Unable to fetch weather. Try again later.</p>`;
-  }
+function showError(message) {
+  weatherResult.innerHTML = `<div class="error">❌ ${message}</div>`;
 }
 
+function handleLocationError(error) {
+  let message = "Location detection failed";
+  if (error.code === error.PERMISSION_DENIED) message = "Please enable location permissions";
+  if (error.code === error.TIMEOUT) message = "Location request timed out";
+  showError(message);
+}
+
+// Initialize
 window.onload = displayHistory;
-A
