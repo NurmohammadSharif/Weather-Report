@@ -6,6 +6,9 @@ const clearHistoryBtn = document.getElementById("clearHistoryBtn");
 const modeSelect = document.getElementById("modeSelect");
 const myLocationBtn = document.getElementById("myLocationBtn");
 
+// OpenCage API Key (replace with your own)
+const OPENCAGE_API_KEY = 'YOUR_OPENCAGE_API_KEY';
+
 // Auto-suggest using OpenCage API
 const suggestBox = document.createElement("ul");
 suggestBox.id = "suggestBox";
@@ -25,7 +28,7 @@ cityInput.addEventListener("input", async () => {
   if (query.length < 2) return;
 
   try {
-    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=YOUR_OPENCAGE_API_KEY&limit=5&language=en`);
+    const res = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=${OPENCAGE_API_KEY}&limit=5&language=en`);
     const data = await res.json();
 
     data.results.forEach(item => {
@@ -76,7 +79,7 @@ myLocationBtn.addEventListener("click", () => {
       const lon = position.coords.longitude;
 
       try {
-        const geoRes = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=YOUR_OPENCAGE_API_KEY`);
+        const geoRes = await fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=${OPENCAGE_API_KEY}`);
         const geoData = await geoRes.json();
 
         if (geoData.results.length > 0) {
@@ -169,5 +172,5 @@ async function fetchWeatherByCoords(lat, lon, placeName) {
   }
 }
 
-// Initial load
+// On page load
 displayHistory();
