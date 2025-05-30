@@ -29,24 +29,55 @@ h1, h3 {
 form {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
   justify-content: center;
   margin-bottom: 20px;
+  gap: 15px;
 }
 
-input, select, button {
+#cityInput {
+  width: 45%;
   padding: 10px;
   font-size: 1rem;
   border-radius: 8px;
   border: none;
   outline: none;
+  margin-right: 1rem; 
 }
 
-input, select {
-  flex: 1 1 200px;
+input.warning::placeholder {
+  color: red;
+  font-weight: bold;
+}
+
+
+#modeSelect {
+  width: 35%;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  margin-right: 1rem; 
+}
+
+button[type="submit"] {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-color: #ffffff;
+  color: #333;
+  transition: background 0.3s ease;
 }
 
 button {
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  outline: none;
   cursor: pointer;
   background-color: #ffffff;
   color: #333;
@@ -58,6 +89,12 @@ button:hover {
 }
 
 #myLocationBtn {
+  display: block;
+  margin: 10px auto;
+  padding: 10px 20px;
+}
+
+#unitToggle {
   display: block;
   margin: 10px auto;
   padding: 10px 20px;
@@ -102,6 +139,11 @@ th, td {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: pointer;
+}
+
+#historyList li:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 #historyList li button {
@@ -110,4 +152,17 @@ th, td {
   font-size: 1.2rem;
   cursor: pointer;
   border: none;
+  padding: 0 5px;
+  min-width: auto;
+}
+
+#clearHistoryBtn {
+  display: block;
+  margin: 15px auto 0;
+  background-color: #ff4444;
+  color: white;
+}
+
+#clearHistoryBtn:hover {
+  background-color: #cc0000;
 }
