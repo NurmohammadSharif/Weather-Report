@@ -26,22 +26,38 @@ h1, h3 {
   margin-bottom: 20px;
 }
 
-form {
-  margin-bottom: 20px;
-}
-
-.top-row,
-.middle-row,
-.bottom-row {
+/* Top Control Section */
+.top-section {
   display: flex;
-  justify-content: center;
-  gap: 15px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 20px;
+
 }
 
-#cityInput {
-  width: 35%;
+.form-wrapper,
+.location-wrapper,
+.unit-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+form {
+  width: 100%;
+}
+
+.row-1 {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+}
+
+#cityInput,
+#modeSelect,
+button[type="submit"] {
   padding: 10px;
   font-size: 1rem;
   border-radius: 8px;
@@ -49,19 +65,9 @@ form {
   outline: none;
 }
 
-#modeSelect {
-  width: 25%;
-  padding: 10px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-}
-
-button[type="submit"],
-#myLocationBtn,
-#unitToggle {
-  padding: 10px 20px;
+/* General Button Styling */
+button {
+  padding: 10px 15px;
   font-size: 1rem;
   border-radius: 8px;
   border: none;
@@ -76,6 +82,12 @@ button:hover {
   background-color: #ddd;
 }
 
+input.warning::placeholder {
+  color: red;
+  font-weight: bold;
+}
+
+/* Result Box */
 #weatherResult {
   margin-top: 20px;
   font-size: 1rem;
@@ -102,6 +114,7 @@ th, td {
   background-color: rgba(0, 0, 0, 0.2);
 }
 
+/* Search History */
 #historyList {
   list-style: none;
   margin-top: 10px;
@@ -143,55 +156,73 @@ th, td {
   background-color: #cc0000;
 }
 
-@media (max-width: 600px) {
-  .top-row {
-    flex-direction: column;
+/* Desktop layout */
+@media (min-width: 601px) {
+  .form-wrapper {
+    flex: 2;
   }
 
-  #cityInput {
+  .form-wrapper .row-1 {
+    display: flex;
     width: 100%;
-    margin-bottom: 10px;
-  }
-
-  #modeSelect,
-  button[type="submit"] {
-    width: 100%;
-  }
-
-  .middle-row,
-  .bottom-row {
-    flex-direction: column;
     gap: 10px;
   }
 
-  #myLocationBtn,
-  #unitToggle {
+  #cityInput {
+    flex: 2;
+  }
+
+  #modeSelect {
+    flex: 1.5;
+  }
+
+  button[type="submit"] {
+    flex: 1;
+  }
+
+  .location-wrapper,
+  .unit-wrapper {
+    flex: 0.6;
+  }
+
+  .location-wrapper button,
+  .unit-wrapper button {
     width: 100%;
   }
 }
+
+/* Mobile layout */
 @media (max-width: 600px) {
-  form {
+  .top-section {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .form-wrapper,
+  .location-wrapper,
+  .unit-wrapper {
+    width: 100%;
+  }
+
+  .form-wrapper .row-1 {
+    flex-direction: column;
+    gap: 10px;
+  }
+
   #cityInput {
     width: 100%;
-    margin-right: 0;
   }
 
   #modeSelect {
     width: 100%;
-    margin-right: 0;
   }
 
   button[type="submit"] {
     width: 100%;
   }
 
-  #myLocationBtn,
-  #unitToggle {
+  .location-wrapper button,
+  .unit-wrapper button {
     width: 100%;
-    margin-top: 10px;
   }
 }
