@@ -10,25 +10,26 @@
   <div class="container">
     <h1>🌦 Weather Forecast</h1>
 
-    <!-- Search Form -->
     <form id="weatherForm">
-      <input type="text" id="cityInput" placeholder="Enter city name..." />
-      <select id="modeSelect">
-        <option value="live">Live</option>
-        <option value="past">Past 7 Days</option>
-        <option value="future">Next 7 Days</option>
-      </select>
-      <button type="submit">Search</button>
+      <div class="top-row">
+        <input type="text" id="cityInput" placeholder="Enter city name..." />
+        <select id="modeSelect">
+          <option value="live">Live</option>
+          <option value="past">Past 7 Days</option>
+          <option value="future">Next 7 Days</option>
+        </select>
+        <button type="submit">Search</button>
+      </div>
+      <div class="middle-row">
+        <button type="button" id="myLocationBtn">📍Get My Location</button>
+      </div>
+      <div class="bottom-row">
+        <button type="button" id="unitToggle">Switch to °F</button>
+      </div>
     </form>
 
-    <!-- Location and Unit Toggle -->
-    <button id="myLocationBtn">📍Get My Location</button>
-    <button type="button" id="unitToggle">Switch to °F</button>
-
-    <!-- Weather Result -->
     <div id="weatherResult"></div>
 
-    <!-- Search History -->
     <h3>Search History</h3>
     <ul id="historyList"></ul>
     <button id="clearHistoryBtn">Clear History</button>
