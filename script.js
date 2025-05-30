@@ -1,5 +1,6 @@
 const form = document.getElementById("weatherForm");
 const cityInput = document.getElementById("cityInput");
+const suggestionsBox = document.getElementById("suggestions");
 const weatherResult = document.getElementById("weatherResult");
 const historyList = document.getElementById("historyList");
 const clearHistoryBtn = document.getElementById("clearHistoryBtn");
@@ -28,7 +29,6 @@ function convertTemp(c) {
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const city = cityInput.value.trim().toUpperCase();
-
   if (city) {
     fetchWeatherByCity(city);
     saveToHistory(city);
@@ -37,7 +37,7 @@ form.addEventListener("submit", (e) => {
     cityInput.placeholder = "Enter city or upazila";
     cityInput.classList.remove("warning");
   } else {
-    cityInput.placeholder = "⚠️ Please enter a place name!";
+    cityInput.placeholder = "⚠ Please enter a place name!";
     cityInput.classList.add("warning");
   }
 });
@@ -63,13 +63,11 @@ myLocationBtn.addEventListener("click", () => {
       try {
         const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
         const geoData = await geoRes.json();
-
         const address = geoData.address || {};
         const place = address.city || address.town || address.village || address.hamlet || "Unknown Place";
         const upazila = address.suburb || address.county || "Unknown Upazila";
         const zilla = address.state_district || address.state || address.region || "Unknown Zilla";
         const fullName = `${place.toUpperCase()} (${upazila}, ${zilla})`;
-
         fetchWeatherByCoords(lat, lon, fullName);
       } catch (err) {
         console.error(err);
@@ -118,7 +116,7 @@ function displayHistory() {
 }
 
 async function fetchWeatherByCity(city) {
-  weatherResult.innerHTML = "Loading..."; // <-- Added for slow internet feedback
+  weatherResult.innerHTML = "Loading...";
   try {
     const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&format=json`);
     const geoData = await geoRes.json();
@@ -177,7 +175,7 @@ async function fetchWeatherByCoords(lat, lon, city) {
       `;
 
       if (current.windspeed > 50) {
-        new Notification("🌪️ Severe Weather Alert", {
+        new Notification("🌪 Severe Weather Alert", {
           body: `High wind speed: ${current.windspeed} km/h in ${city}`
         });
         const alertAudio = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
@@ -259,3 +257,51 @@ async function fetchWeatherByCoords(lat, lon, city) {
 }
 
 window.onload = displayHistory;
+
+// Geoapify Autocomplete
+const suggestionBox = document.createElement("div");
+suggestionBox.style.position = "absolute";
+suggestionBox.style.background = "#fff";
+suggestionBox.style.border = "1px solid #ccc";
+suggestionBox.style.zIndex = "1000";
+suggestionBox.style.width = cityInput.offsetWidth + "px";
+suggestionBox.style.maxHeight = "200px";
+suggestionBox.style.overflowY = "auto";
+suggestionBox.style.display = "none";
+cityInput.parentNode.appendChild(suggestionBox);
+
+cityInput.addEventListener("input", async () => {
+  const query = cityInput.value.trim();
+  suggestionBox.innerHTML = "";
+  suggestionBox.style.display = "none";
+
+  if (query.length < 2) return;
+
+  const res = await fetch(`https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(query)}&limit=5&apiKey=c160153d0b9c4a059ba88f27ceafd5f5`);
+  const data = await res.json();
+
+  if (data.features && data.features.length) {
+    data.features.forEach((item) => {
+      const div = document.createElement("div");
+      div.textContent = item.properties.formatted;
+      div.style.padding = "5px";
+      div.style.cursor = "pointer";
+      div.onmouseover = () => div.style.background = "#f0f0f0";
+      div.onmouseout = () => div.style.background = "#fff";
+      div.onclick = () => {
+        cityInput.value = item.properties.city || item.properties.name || item.properties.formatted;
+        suggestionBox.innerHTML = "";
+        suggestionBox.style.display = "none";
+      };
+      suggestionBox.appendChild(div);
+    });
+    suggestionBox.style.display = "block";
+  }
+});
+
+document.addEventListener("click", (e) => {
+  if (!suggestionBox.contains(e.target) && e.target !== cityInput) {
+    suggestionBox.innerHTML = "";
+    suggestionBox.style.display = "none";
+  }
+});
