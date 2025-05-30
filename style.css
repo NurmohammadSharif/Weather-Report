@@ -169,3 +169,29 @@ th, td {
     width: 100%;
   }
 }
+@media (max-width: 600px) {
+  form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #cityInput {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  #modeSelect {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  button[type="submit"] {
+    width: 100%;
+  }
+
+  #myLocationBtn,
+  #unitToggle {
+    width: 100%;
+    margin-top: 10px;
+  }
+}
