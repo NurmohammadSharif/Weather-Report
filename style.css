@@ -35,7 +35,6 @@ h1, h3 {
   gap: 15px;
   align-items: center;
   margin-bottom: 20px;
-  border:2px solid red;
 }
 .form-wrapper{
   width:100%;
@@ -56,7 +55,7 @@ form {
 .row-1 {
   display: flex;
   width: 100%;
-  gap: 10px;
+  gap: 10px;;
 }
 
 #cityInput,
@@ -169,13 +168,12 @@ th, td {
     display: flex;
     width: 100%;
     gap: 10px;
-    border:2px solid orange;
   }
 
   #cityInput {
     width:100%;
     flex: 2;
-    border:2px solid red;
+
   }
 
   #modeSelect {
@@ -210,6 +208,13 @@ th, td {
     width: 100%;
   }
 
+.row2{
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+
   .form-wrapper .row-1 {
     flex-direction: column;
     gap: 10px;
@@ -220,11 +225,11 @@ th, td {
   }
 
   #modeSelect {
-    width: 100%;
+    width: 70%;
   }
 
   button[type="submit"] {
-    width: 100%;
+    width: 25%;
   }
 
   .location-wrapper button,
