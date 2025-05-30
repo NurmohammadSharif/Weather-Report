@@ -164,5 +164,23 @@ th, td {
 }
 
 #clearHistoryBtn:hover {
-  background-color: #cc0000;
+  background-color: #cc0000;
+}
+
+@media (max-width: 600px) {
+  form {
+    flex-wrap: nowrap;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  #cityInput, #modeSelect {
+    width: 30%;
+    margin-right: 0;
+  }
+
+  button[type="submit"] {
+    width: 30%;
+    padding: 10px;
+  }
 }
