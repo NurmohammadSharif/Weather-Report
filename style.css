@@ -27,29 +27,30 @@ h1, h3 {
 }
 
 form {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 15px;
   margin-bottom: 20px;
 }
 
+.top-row,
+.middle-row,
+.bottom-row {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
 #cityInput {
-  flex: 2;
+  width: 35%;
   padding: 10px;
   font-size: 1rem;
   border-radius: 8px;
   border: none;
   outline: none;
-}
-
-input.warning::placeholder {
-  color: red;
-  font-weight: bold;
 }
 
 #modeSelect {
-  flex: 1.5;
+  width: 25%;
   padding: 10px;
   font-size: 1rem;
   border-radius: 8px;
@@ -57,21 +58,10 @@ input.warning::placeholder {
   outline: none;
 }
 
-button[type="submit"] {
-  flex: 1;
+button[type="submit"],
+#myLocationBtn,
+#unitToggle {
   padding: 10px 20px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  background-color: #ffffff;
-  color: #333;
-  transition: background 0.3s ease;
-}
-
-button {
-  padding: 10px 15px;
   font-size: 1rem;
   border-radius: 8px;
   border: none;
@@ -84,18 +74,6 @@ button {
 
 button:hover {
   background-color: #ddd;
-}
-
-#myLocationBtn {
-  display: block;
-  margin: 10px auto;
-  padding: 10px 20px;
-}
-
-#unitToggle {
-  display: block;
-  margin: 10px auto;
-  padding: 10px 20px;
 }
 
 #weatherResult {
@@ -151,6 +129,7 @@ th, td {
   cursor: pointer;
   border: none;
   padding: 0 5px;
+  min-width: auto;
 }
 
 #clearHistoryBtn {
@@ -164,11 +143,9 @@ th, td {
   background-color: #cc0000;
 }
 
-/* 📱 Mobile layout fix */
 @media (max-width: 600px) {
-  form {
+  .top-row {
     flex-direction: column;
-    align-items: stretch;
   }
 
   #cityInput {
@@ -178,20 +155,17 @@ th, td {
 
   #modeSelect,
   button[type="submit"] {
-    width: 48%;
-    margin: 0 1%;
-    display: inline-block;
-  }
-
-  #myLocationBtn {
-    display: block;
-    margin: 15px auto 0;
     width: 100%;
   }
 
+  .middle-row,
+  .bottom-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #myLocationBtn,
   #unitToggle {
-    display: block;
-    margin: 15px auto 0;
     width: 100%;
   }
 }
