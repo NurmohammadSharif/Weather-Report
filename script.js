@@ -118,6 +118,7 @@ function displayHistory() {
 }
 
 async function fetchWeatherByCity(city) {
+  weatherResult.innerHTML = "Loading..."; // <-- Added for slow internet feedback
   try {
     const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&format=json`);
     const geoData = await geoRes.json();
